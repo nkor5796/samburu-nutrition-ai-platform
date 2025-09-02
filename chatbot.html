@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chatbot</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="lessons.html">Lessons</a>
+    <a href="quizes.html">Quizzes</a>
+    <a href="chatbot.html">Chatbot</a>
+  </nav>
+
+  <section>
+    <h2>💬 Chat with AI</h2>
+    <div id="chat-box"></div>
+    <input type="text" id="userInput" placeholder="Ask me about nutrition...">
+    <button onclick="sendMessage()">Send</button>
+  </section>
+  <script>
+    // Chatbot Logic
+    async function sendMessage() {
+      let input = document.getElementById("userInput");
+      let chatBox = document.getElementById("chat-box");
+
+      if (!input.value) return;
+
+      // Show user message
+      let userMsg = document.createElement("p");
+      userMsg.textContent = "You: " + input.value;
+      chatBox.appendChild(userMsg);
+
+      // Call backend
+      let res = await fetch("http://localhost:5000/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: input.value })
+      });
+      let data = await res.json();
+
+      // Show AI reply
+      let botMsg = document.createElement("p");
+      botMsg.textContent = "AI: " + data.reply;
+      chatBox.appendChild(botMsg);
+
+      input.value = "";
+    }
+  </script>
+</body>
+</html>

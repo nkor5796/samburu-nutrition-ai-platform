@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Nutrition Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f4f7fa;
+    }
+    nav {
+      margin-bottom: 20px;
+    }
+    nav a {
+      margin-right: 15px;
+      text-decoration: none;
+      color: #007bff;
+      font-weight: bold;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+    section {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+    }
+    button {
+      margin: 5px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background: #007bff;
+      color: white;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #result {
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="lessons.html">Lessons</a>
+    <a href="quizzes.html">Quizzes</a>
+    <a href="chatbot.html">Chatbot</a>
+  </nav>
+
+  <section>
+    <h2>❓ Nutrition Quiz</h2>
+    <p id="question"></p>
+    <div id="answers"></div>
+    <p id="result"></p>
+    <button id="nextBtn" style="display:none;">Next ➡️</button>
+    <p id="score" style="margin-top: 20px; font-size: 18px; font-weight: bold;"></p>
+    <p id="comment" style="margin-top: 10px; font-size: 16px; font-style: italic;"></p>
+  </section>
+
+  <script>
+    const quizData = [
+      { question: "Which of the following is a protein?", options: ["Carbohydrates", "Proteins", "Fats"], correct: "Proteins" },
+      { question: "Which nutrient provides the most energy per gram?", options: ["Proteins", "Carbohydrates", "Fats"], correct: "Fats" },
+      { question: "Which vitamin is essential for strong bones?", options: ["Vitamin C", "Vitamin D", "Vitamin B12"], correct: "Vitamin D" },
+      { question: "Which mineral is important for healthy blood?", options: ["Iron", "Calcium", "Potassium"], correct: "Iron" },
+      { question: "Which nutrient helps in muscle building?", options: ["Fats", "Proteins", "Vitamins"], correct: "Proteins" },
+      { question: "Which vitamin boosts immunity?", options: ["Vitamin A", "Vitamin C", "Vitamin K"], correct: "Vitamin C" }
+    ];
+
+    // Shuffle questions
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+    const shuffledQuiz = shuffle([...quizData]);
+
+    let currentQuestion = 0;
+    let score = 0;
+
+    const questionEl = document.getElementById("question");
+    const answersEl = document.getElementById("answers");
+    const resultEl = document.getElementById("result");
+    const nextBtn = document.getElementById("nextBtn");
+    const scoreEl = document.getElementById("score");
+    const commentEl = document.getElementById("comment");
+
+    function loadQuestion() {
+      resultEl.textContent = "";
+      nextBtn.style.display = "none";
+      commentEl.textContent = "";
+
+      let q = shuffledQuiz[currentQuestion];
+      questionEl.textContent = q.question;
+
+      answersEl.innerHTML = "";
+      q.options.forEach(option => {
+        let btn = document.createElement("button");
+        btn.textContent = option;
+        btn.dataset.answer = option;
+        btn.addEventListener("click", checkAnswer);
+        answersEl.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(e) {
+      const selected = e.target.dataset.answer;
+      const correct = shuffledQuiz[currentQuestion].correct;
+
+      if (selected === correct) {
+        resultEl.textContent = "✅ Correct!";
+        resultEl.style.color = "green";
+        score++;
+      } else {
+        resultEl.textContent = `❌ Wrong! Correct answer: ${correct}`;
+        resultEl.style.color = "red";
+      }
+
+      nextBtn.style.display = "inline-block";
+      Array.from(answersEl.children).forEach(btn => btn.disabled = true);
+    }
+
+    nextBtn.addEventListener("click", () => {
+      currentQuestion++;
+      if (currentQuestion < shuffledQuiz.length) {
+        loadQuestion();
+      } else {
+        showFinalScore();
+      }
+    });
+
+    function showFinalScore() {
+      questionEl.textContent = "🎉 Quiz Completed!";
+      answersEl.innerHTML = "";
+      resultEl.textContent = "";
+      nextBtn.style.display = "none";
+
+      const percentage = Math.round((score / shuffledQuiz.length) * 100);
+      scoreEl.textContent = `Your Score: ${score} / ${shuffledQuiz.length} (${percentage}%)`;
+
+      if (percentage < 50) {
+        commentEl.textContent = "💡 Keep trying! Every step counts. You can do better next time!";
+        commentEl.style.color = "red";
+      } else if (percentage <= 75) {
+        commentEl.textContent = "👏 Good work! You're getting there. Keep pushing!";
+        commentEl.style.color = "orange";
+      } else {
+        commentEl.textContent = "🌟 Excellent! You're a nutrition master!";
+        commentEl.style.color = "green";
+      }
+    }
+
+    loadQuestion();
+  </script>
+</body>
+</h

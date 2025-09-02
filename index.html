@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI-Powered Nutrition and Health Education Platform for Samburu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <style id="app-style">
+    body {
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    .chat-container {
+      height: 70vh;
+      overflow-y: auto;
+    }
+    
+    .user-message {
+      background-color: #e2f5fe;
+      border-radius: 18px 18px 0 18px;
+    }
+    
+    .bot-message {
+      background-color: #f0f0f0;
+      border-radius: 18px 18px 18px 0;
+    }
+    
+    .typing-indicator {
+      display: inline-block;
+    }
+    
+    .typing-indicator span {
+      height: 10px;
+      width: 10px;
+      float: left;
+      margin: 0 1px;
+      background-color: #9e9ea1;
+      display: block;
+      border-radius: 50%;
+      opacity: 0.4;
+    }
+    
+    .typing-indicator span:nth-of-type(1) {
+      animation: 1s blink infinite 0.3333s;
+    }
+    
+    .typing-indicator span:nth-of-type(2) {
+      animation: 1s blink infinite 0.6666s;
+    }
+    
+    .typing-indicator span:nth-of-type(3) {
+      animation: 1s blink infinite 0.9999s;
+    }
+    
+    @keyframes blink {
+      50% {
+        opacity: 1;
+      }
+    }
+    
+    .lesson-card {
+      transition: transform 0.3s ease;
+    }
+    
+    .lesson-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .quiz-option:hover:not(.selected) {
+      background-color: #f3f4f6;
+    }
+    
+    .subscription-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .subscription-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .logo-text {
+      background: linear-gradient(90deg, #06b6d4, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .page-enter {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    
+    .page-enter-active {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 300ms, transform 300ms;
+    }
+    
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <!-- Navigation Bar -->
+  <nav class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex">
+          <div class="flex-shrink-0 flex items-center">
+            <span class="text-2xl font-bold logo-text">Samburu Nutrition</span>
+          </div>
+        </div>
+        
+        <div class="hidden md:flex items-center space-x-4">
+          <button id="nav-chatbot" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 transition">
+            <i class="fas fa-comment-dots mr-2"></i>Chatbot
+          </button>
+          <button id="nav-lessons" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 transition">
+            <i class="fas fa-book-open mr-2"></i>Lessons
+          </button>
+          <button id="nav-quiz" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 transition">
+            <i class="fas fa-question-circle mr-2"></i>Quiz
+          </button>
+          <button id="nav-subscription" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 transition">
+            <i class="fas fa-star mr-2"></i>Subscription
+          </button>
+          
+          <!-- Language Selector -->
+          <div class="relative ml-3">
+            <button id="language-button" type="button" class="flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+              <i class="fas fa-globe mr-2"></i>
+              <span id="current-language">English</span>
+              <i class="fas fa-chevron-down ml-1"></i>
+            </button>
+            <div id="language-dropdown" class="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-10">
+              <a href="javascript:void(0)" class="language-option block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-lang="en">English</a>
+              <a href="javascript:void(0)" class="language-option block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-lang="sw">Swahili</a>
+              <a href="javascript:void(0)" class="language-option block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-lang="tr">Turkana</a>
+            </div>
+          </div>
+          
+          <button id="login-button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600">
+            <i class="fas fa-sign-in-alt mr-2"></i>Login
+          </button>
+        </div>
+        
+        <!-- Mobile menu button -->
+        <div class="flex md:hidden items-center">
+          <button id="mobile-menu-button" class="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mobile menu, show/hide based on menu state -->
+    <div id="mobile-menu" class="hidden md:hidden">
+      <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+        <a href="javascript:void(0)" id="mobile-chatbot" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100">
+          <i class="fas fa-comment-dots mr-2"></i>Chatbot
+        </a>
+        <a href="javascript:void(0)" id="mobile-lessons" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100">
+          <i class="fas fa-book-open mr-2"></i>Lessons
+        </a>
+        <a href="javascript:void(0)" id="mobile-quiz" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100">
+          <i class="fas fa-question-circle mr-2"></i>Quiz
+        </a>
+        <a href="javascript:void(0)" id="mobile-subscription" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100">
+          <i class="fas fa-star mr-2"></i>Subscription
+        </a>
+        
+        <!-- Language Selector Mobile -->
+        <div class="px-3 py-2">
+          <label class="block text-sm font-medium text-gray-700">Language</label>
+          <select id="mobile-language" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+            <option value="en">English</option>
+            <option value="sw">Swahili</option>
+            <option value="tr">Turkana</option>
+          </select>
+        </div>
+        
+        <a href="javascript:void(0)" id="mobile-login" class="block w-full text-center px-3 py-2 rounded-md text-base font-medium bg-gradient-to-r from-cyan-500 to-blue-500 text-white">
+          <i class="fas fa-sign-in-alt mr-2"></i>Login
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main class="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <!-- Chatbot Page -->
+    <section id="chatbot-page" class="page-container">
+      <div class="max-w-3xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Nutrition Assistant</h1>
+        <p class="text-gray-600 mb-8">Ask our AI assistant any questions about nutrition, health, and well-being.</p>
+        
+        <div class="bg-white rounded-lg shadow-lg p-4">
+          <div id="chat-messages" class="chat-container mb-4 p-3">
+            <div class="bot-message p-3 mb-4 max-w-[80%]">
+              <p>Hello! I'm your nutrition assistant. How can I help you today?</p>
+            </div>
+          </div>
+          
+          <div class="border-t pt-4">
+            <form id="chat-form" class="flex items-center">
+              <input 
+                type="text" 
+                id="chat-input" 
+                placeholder="Type your message..." 
+                class="flex-grow p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+              <button 
+                type="submit" 
+                class="bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-2 px-4 rounded-r-lg hover:from-cyan-600 hover:to-blue-600"
+              >
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lessons Page -->
+    <section id="lessons-page" class="page-container hidden">
+      <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Nutrition & Health Lessons</h1>
+        <p class="text-gray-600 mb-8">Explore our collection of educational content on nutrition and health.</p>
+        
+        <div id="lessons-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Lessons will be loaded here -->
+          <div class="lesson-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg">
+            <img src="https://cdn.pixabay.com/photo/2017/08/05/11/16/colorful-2582655_1280.jpg" alt="Balanced Diet" class="w-full h-48 object-cover">
+            <div class="p-6">
+              <h3 class="font-bold text-xl mb-2">Balanced Diet Fundamentals</h3>
+              <p class="text-gray-600 mb-4">Learn the basics of creating balanced meals for optimal health.</p>
+              <button class="view-lesson-btn text-blue-600 hover:text-blue-800 font-medium" data-id="1">
+                Read More <i class="fas fa-arrow-right ml-1"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="lesson-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg">
+            <img src="https://cdn.pixabay.com/photo/2015/12/09/17/11/vegetables-1085063_1280.jpg" alt="Local Foods" class="w-full h-48 object-cover">
+            <div class="p-6">
+              <h3 class="font-bold text-xl mb-2">Nutrition in Local Foods</h3>
+              <p class="text-gray-600 mb-4">Discover the nutritional benefits of traditional Samburu ingredients.</p>
+              <button class="view-lesson-btn text-blue-600 hover:text-blue-800 font-medium" data-id="2">
+                Read More <i class="fas fa-arrow-right ml-1"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="lesson-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg">
+            <img src="https://cdn.pixabay.com/photo/2017/06/29/20/09/mexican-2456038_1280.jpg" alt="Meal Preparation" class="w-full h-48 object-cover">
+            <div class="p-6">
+              <h3 class="font-bold text-xl mb-2">Healthy Meal Preparation</h3>
+              <p class="text-gray-600 mb-4">Simple techniques for preparing nutritious meals for your family.</p>
+              <button class="view-lesson-btn text-blue-600 hover:text-blue-800 font-medium" data-id="3">
+                Read More <i class="fas fa-arrow-right ml-1"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Lesson Detail Modal -->
+      <div id="lesson-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+          <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h2 id="lesson-modal-title" class="text-2xl font-bold"></h2>
+              <button id="close-lesson-modal" class="text-gray-400 hover:text-gray-500">
+                <i class="fas fa-times text-xl"></i>
+              </button>
+            </div>
+            <div id="lesson-modal-content" class="prose max-w-none">
+              <!-- Lesson content will be loaded here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quiz Page -->
+    <section id="quiz-page" class="page-container hidden">
+      <div class="max-w-3xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Nutrition Knowledge Quiz</h1>
+        <p class="text-gray-600 mb-8">Test your knowledge and learn more about nutrition and healthy eating.</p>
+        
+        <div id="quiz-start-screen" class="bg-white rounded-lg shadow-lg p-8 text-center">
+          <img src="https://cdn.pixabay.com/photo/2020/04/22/09/01/quiz-5077243_1280.jpg" alt="Quiz" class="w-60 h-60 mx-auto mb-6 rounded-lg">
+          <h2 class="text-2xl font-bold mb-4">Ready to Test Your Knowledge?</h2>
+          <p class="text-gray-600 mb-6">This quiz contains questions about nutrition basics and healthy eating practices.</p>
+          <button id="start-quiz-btn" class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 font-medium">
+            Start Quiz <i class="fas fa-play ml-2"></i>
+          </button>
+        </div>
+        
+        <div id="quiz-questions-screen" class="bg-white rounded-lg shadow-lg p-8 hidden">
+          <div class="mb-6 flex justify-between items-center">
+            <div>
+              <span class="text-sm text-gray-500">Question</span>
+              <h3 id="question-number" class="text-lg font-bold">1/5</h3>
+            </div>
+            <div class="w-32 bg-gray-200 rounded-full h-2.5">
+              <div id="quiz-progress" class="bg-blue-500 h-2.5 rounded-full" style="width: 20%"></div>
+            </div>
+          </div>
+          
+          <h2 id="quiz-question" class="text-xl font-bold mb-6">What food group should make up the largest portion of your diet?</h2>
+          
+          <div id="quiz-options" class="space-y-3 mb-6">
+            <div class="quiz-option border rounded-lg p-4 cursor-pointer hover:bg-gray-50" data-option="a">
+              <span class="font-medium">A.</span> Fruits and vegetables
+            </div>
+            <div class="quiz-option border rounded-lg p-4 cursor-pointer hover:bg-gray-50" data-option="b">
+              <span class="font-medium">B.</span> Grains and cereals
+            </div>
+            <div class="quiz-option border rounded-lg p-4 cursor-pointer hover:bg-gray-50" data-option="c">
+              <span class="font-medium">C.</span> Proteins
+            </div>
+            <div class="quiz-option border rounded-lg p-4 cursor-pointer hover:bg-gray-50" data-option="d">
+              <span class="font-medium">D.</span> Dairy products
+            </div>
+          </div>
+          
+          <div id="quiz-feedback" class="mb-6 p-4 rounded-lg hidden">
+            <!-- Feedback will be shown here -->
+          </div>
+          
+          <div class="flex justify-between">
+            <button id="quiz-prev-btn" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed hidden">
+              <i class="fas fa-arrow-left mr-2"></i>Previous
+            </button>
+            <button id="quiz-next-btn" class="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600">
+              Next<i class="fas fa-arrow-right ml-2"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div id="quiz-results-screen" class="bg-white rounded-lg shadow-lg p-8 text-center hidden">
+          <div class="mb-6">
+            <div class="inline-block p-4 rounded-full bg-blue-100">
+              <i class="fas fa-trophy text-4xl text-blue-500"></i>
+            </div>
+          </div>
+          <h2 class="text-2xl font-bold mb-2">Quiz Completed!</h2>
+          <p class="text-gray-600 mb-4">Your score:</p>
+          <div class="text-5xl font-bold mb-6 text-blue-600"><span id="quiz-score">0</span>/5</div>
+          <button id="retry-quiz-btn" class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600">
+            Try Again
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Subscription Page -->
+    <section id="subscription-page" class="page-container hidden">
+      <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Premium Nutrition Plans</h1>
+        <p class="text-gray-600 mb-8">Subscribe to unlock premium content, personalized meal plans, and expert nutrition advice.</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          <!-- Basic Plan -->
+          <div class="subscription-card bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+            <div class="p-8">
+              <h3 class="text-xl font-bold mb-4">Basic Plan</h3>
+              <div class="flex items-end mb-6">
+                <span class="text-4xl font-bold">Free</span>
+              </div>
+              <ul class="space-y-3 mb-8">
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                  <span>Access to basic nutrition guides</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                  <span>Limited chatbot assistance</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                  <span>5 nutrition quizzes</span>
+                </li>
+              </ul>
+              <button class="w-full py-3 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 font-medium">
+                Current Plan
+              </button>
+            </div>
+          </div>
+          
+          <!-- Standard Plan -->
+          <div class="subscription-card bg-white rounded-xl shadow-lg overflow-hidden border border-blue-200 relative">
+            <div class="absolute top-0 right-0 bg-blue-500 text-white text-xs px-3 py-1 rounded-bl-lg">
+              Most Popular
+            </div>
+            <div class="p-8">
+              <h3 class="text-xl font-bold mb-4">Standard Plan</h3>
+              <div class="flex items-end mb-6">
+                <span class="text-4xl font-bold">KES 300</span>
+                <span class="text-gray-500 ml-1">/month</span>
+              </div>
+              <ul class="space-y-3 mb-8">
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                  <span>All basic features</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                  <span>Unlimited chatbot assistance</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                  <span>20+ nutrition quizzes</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                  <span>Weekly meal plans</span>
+                </li>
+              </ul>
+              <button class="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 font-medium subscribe-btn" data-plan="standard">
+                Subscribe Now
+              </button>
+            </div>
+          </div>
+          
+          <!-- Premium Plan -->
+          <div class="subscription-card bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+            <div class="p-8">
+              <h3 class="text-xl font-bold mb-4">Premium Plan</h3>
+              <div class="flex items-end mb-6">
+                <span class="text-4xl font-bold">KES 500</span>
+                <span class="text-gray-500 ml-1">/month</span>
+              </div>
+              <ul class="space-y-3 mb-8">
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                  <span>All standard features</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                  <span>Personalized meal plans</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                  <span>Priority chatbot support</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                  <span>Offline content access</span>
+                </li>
+              </ul>
+              <button class="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 font-medium subscribe-btn" data-plan="premium">
+                Subscribe Now
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-lg p-8">
+          <h2 class="text-2xl font-bold mb-6">Specialized Meal Plans</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="border rounded-lg overflow-hidden">
+              <img src="https://cdn.pixabay.com/photo/2017/03/23/19/57/asparagus-2169305_1280.jpg" alt="Weight Loss" class="w-full h-48 object-cover">
+              <div class="p-4">
+                <h3 class="font-bold text-lg mb-2">Weight Management Plan</h3>
+                <p class="text-gray-600 mb-4">Balanced nutrition plans designed to help maintain healthy weight.</p>
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-blue-600">KES 400</span>
+                  <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 subscribe-btn" data-plan="weight">
+                    Purchase
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="border rounded-lg overflow-hidden">
+              <img src="https://cdn.pixabay.com/photo/2016/11/18/14/39/beans-1834984_1280.jpg" alt="Family Plan" class="w-full h-48 object-cover">
+              <div class="p-4">
+                <h3 class="font-bold text-lg mb-2">Family Nutrition Plan</h3>
+                <p class="text-gray-600 mb-4">Nutritionally complete meal plans for families with children.</p>
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-blue-600">KES 600</span>
+                  <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 subscribe-btn" data-plan="family">
+                    Purchase
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="border rounded-lg overflow-hidden">
+              <img src="https://cdn.pixabay.com/photo/2017/01/20/15/06/oranges-1995056_1280.jpg" alt="Immunity" class="w-full h-48 object-cover">
+              <div class="p-4">
+                <h3 class="font-bold text-lg mb-2">Immunity Boosting Plan</h3>
+                <p class="text-gray-600 mb-4">Focus on foods that enhance immune system function.</p>
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-blue-600">KES 450</span>
+                  <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 subscribe-btn" data-plan="immunity">
+                    Purchase
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Payment Modal -->
+  <div id="payment-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold">Complete Your Subscription</h2>
+          <button id="close-payment-modal" class="text-gray-400 hover:text-gray-500">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+        
+        <div class="mb-6">
+          <p class="text-gray-600">You're subscribing to: <span id="selected-plan-name" class="font-medium"></span></p>
+          <p class="text-lg font-bold mt-2">Amount: <span id="selected-plan-amount"></span></p>
+        </div>
+        
+        <form id="payment-form">
+          <div class="mb-4">
+            <label for="payment-name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+            <input 
+              type="text" 
+              id="payment-name" 
+              class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+              placeholder="Your full name"
+              required
+            >
+          </div>
+          
+          <div class="mb-4">
+            <label for="payment-email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+            <input 
+              type="email" 
+              id="payment-email" 
+              class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+              placeholder="Your email address"
+              required
+            >
+          </div>
+          
+          <div class="mb-4">
+            <label for="payment-phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+            <input 
+              type="tel" 
+              id="payment-phone" 
+              class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+              placeholder="Your phone number"
+              required
+            >
+          </div>
+          
+          <div class="mt-6">
+            <button 
+              type="submit" 
+              class="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 font-medium"
+            >
+              Complete Payment
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div id="login-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold">Login to Your Account</h2>
+          <button id="close-login-modal" class="text-gray-400 hover:text-gray-500">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+        
+        <form id="login-form" class="mb-4">
+          <div class="mb-4">
+            <label for="login-email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+            <input 
+              type="email" 
+              id="login-email" 
+              class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+              placeholder="Your email address"
+              required
+            >
+          </div>
+          
+          <div class="mb-6">
+            <label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input 
+              type="password" 
+              id="login-password" 
+              class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+              placeholder="Your password"
+              required
+            >
+          </div>
+          
+          <button 
+            type="submit" 
+            class="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 font-medium"
+          >
+            Login
+          </button>
+        </form>
+        
+        <p class="text-center text-sm text-gray-600">
+          Don't have an account? 
+          <a href="javascript:void(0)" id="show-register" class="text-blue-600 hover:text-blue-800 font-medium">Register</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Register Modal -->
+  <div id="register-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold">Create an Account</h2>
+          <button id="close-register-modal" class="text-gray-400 hover:text-gray-500">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+        
+        <form id="register-form">
+          <div class="mb-4">
+            <label for="register-name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+            <input 
+              type="text" 
+              id="register-name" 
+              class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+              placeholder="Your full name"
+              required
+            >
+          </div>
+          
+          <div class="mb-4">
+            <label for="register-email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+            <input 
+              type="email" 
+              id="register-email" 
+              class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+              placeholder="Your email address"
+              required
+            >
+          </div>
+          
+          <div class="mb-4">
+            <label for="register-password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input 
+              type="password" 
+              id="register-password" 
+              class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+              placeholder="Create a password"
+              required
+            >
+          </div>
+          
+          <div class="mb-6">
+            <label for="register-role" class="block text-sm font-medium text-gray-700 mb-1">I am a</label>
+            <select 
+              id="register-role" 
+              class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              <option value="student">Student</option>
+              <option value="parent">Parent</option>
+            </select>
+          </div>
+          
+          <button 
+            type="submit" 
+            class="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 font-medium"
+          >
+            Register
+          </button>
+        </form>
+        
+        <p class="text-center text-sm text-gray-600 mt-4">
+          Already have an account? 
+          <a href="javascript:void(0)" id="show-login" class="text-blue-600 hover:text-blue-800 font-medium">Login</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-white rounded-lg shadow-lg p-4 flex items-center max-w-xs z-50 transform transition-transform duration-300 translate-y-full">
+    <div id="toast-icon" class="mr-3 text-green-500">
+      <i id="toast-icon-symbol" class="fas fa-check-circle text-xl"></i>
+    </div>
+    <div>
+      <h4 id="toast-title" class="font-medium">Success</h4>
+      <p id="toast-message" class="text-sm text-gray-600">Your action was completed successfully.</p>
+    </div>
+    <button id="close-toast" class="ml-4 text-gray-400 hover:text-gray-500">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <script id="app-script">
+    // App state
+    const state = {
+      currentPage: 'chatbot-page',
+      language: localStorage.getItem('preferredLanguage') || 'en',
+      isLoggedIn: false,
+      chatMessages: [],
+      currentQuestion: 0,
+      quizScore: 0,
+      quizAnswers: [],
+      selectedOptions: []
+    };
+    
+    // Language translations (simplified for prototype)
+    const translations = {
+      en: {
+        chatbot: 'Chatbot',
+        lessons: 'Lessons',
+        quiz: 'Quiz',
+        subscription: 'Subscription',
+        login: 'Login',
+        chatbotGreeting: 'Hello! I\'m your nutrition assistant. How can I help you today?',
+        chatbotPlaceholder: 'Type your message...',
+        send: 'Send',
+        nutritionAssistant: 'Nutrition Assistant',
+        askQuestion: 'Ask our AI assistant any questions about nutrition, health, and well-being.'
+      },
+      sw: {
+        chatbot: 'Roboti ya Mazungumzo',
+        lessons: 'Masomo',
+        quiz: 'Jaribio',
+        subscription: 'Usajili',
+        login: 'Ingia',
+        chatbotGreeting: 'Habari! Mimi ni msaidizi wako wa lishe. Nawezaje kukusaidia leo?',
+        chatbotPlaceholder: 'Andika ujumbe wako...',
+        send: 'Tuma',
+        nutritionAssistant: 'Msaidizi wa Lishe',
+        askQuestion: 'Uliza msaidizi wetu wa AI maswali yoyote kuhusu lishe, afya, na ustawi.'
+      },
+      tr: {
+        chatbot: 'Akijibu',
+        lessons: 'Emanikitabo',
+        quiz: 'Ngacarot',
+        subscription: 'Ainakin',
+        login: 'Ejok',
+        chatbotGreeting: 'Ejok! Erai ayong akitorianakini kon akimuj. Ainyo inyoika aakingarakin diena?',
+        chatbotPlaceholder: 'Tac ngesi kon...',
+        send: 'Aite',
+        nutritionAssistant: 'Akitorianakini kon Akimuj',
+        askQuestion: 'Kinga akitoret kon AI ngakiro daadang arai kon akimuj, ajokon, ka ainakin ajokon.'
+      }
+    };
+    
+    // Initialize app when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      initApp();
+    });
+    
+    function initApp() {
+      // Set initial language
+      updateLanguage(state.language);
+      
+      // Set up navigation
+      setupNavigation();
+      
+      // Set up language selector
+      setupLanguageSelector();
+      
+      // Set up chatbot
+      setupChatbot();
+      
+      // Set up lessons
+      setupLessons();
+      
+      // Set up quiz
+      setupQuiz();
+      
+      // Set up subscription
+      setupSubscription();
+      
+      // Set up authentication modals
+      setupAuthModals();
+      
+      // Show the current page
+      showPage(state.currentPage);
+    }
+    
+    function updateLanguage(langCode) {
+      state.language = langCode;
+      localStorage.setItem('preferredLanguage', langCode);
+      
+      // Update language display
+      document.getElementById('current-language').textContent = {
+        'en': 'English',
+        'sw': 'Swahili',
+        'tr': 'Turkana'
+      }[langCode];
+      
+      // Update mobile language selector
+      document.getElementById('mobile-language').value = langCode;
+      
+      // Update UI text elements (would be more extensive in a real app)
+      document.getElementById('nav-chatbot').innerHTML = `<i class="fas fa-comment-dots mr-2"></i>${translations[langCode].chatbot}`;
+      document.getElementById('nav-lessons').innerHTML = `<i class="fas fa-book-open mr-2"></i>${translations[langCode].lessons}`;
+      document.getElementById('nav-quiz').innerHTML = `<i class="fas fa-question-circle mr-2"></i>${translations[langCode].quiz}`;
+      document.getElementById('nav-subscription').innerHTML = `<i class="fas fa-star mr-2"></i>${translations[langCode].subscription}`;
+      document.getElementById('login-button').innerHTML = `<i class="fas fa-sign-in-alt mr-2"></i>${translations[langCode].login}`;
+      
+      // Update mobile menu items
+      document.getElementById('mobile-chatbot').innerHTML = `<i class="fas fa-comment-dots mr-2"></i>${translations[langCode].chatbot}`;
+      document.getElementById('mobile-lessons').innerHTML = `<i class="fas fa-book-open mr-2"></i>${translations[langCode].lessons}`;
+      document.getElementById('mobile-quiz').innerHTML = `<i class="fas fa-question-circle mr-2"></i>${translations[langCode].quiz}`;
+      document.getElementById('mobile-subscription').innerHTML = `<i class="fas fa-star mr-2"></i>${translations[langCode].subscription}`;
+      document.getElementById('mobile-login').innerHTML = `<i class="fas fa-sign-in-alt mr-2"></i>${translations[langCode].login}`;
+    }
+    
+    function setupNavigation() {
+      // Desktop navigation
+      document.getElementById('nav-chatbot').addEventListener('click', () => showPage('chatbot-page'));
+      document.getElementById('nav-lessons').addEventListener('click', () => showPage('lessons-page'));
+      document.getElementById('nav-quiz').addEventListener('click', () => showPage('quiz-page'));
+      document.getElementById('nav-subscription').addEventListener('click', () => showPage('subscription-page'));
+      document.getElementById('login-button').addEventListener('click', () => showLoginModal());
+      
+      // Mobile navigation
+      document.getElementById('mobile-chatbot').addEventListener('click', () => {
+        showPage('chatbot-page');
+        toggleMobileMenu();
+      });
+      document.getElementById('mobile-lessons').addEventListener('click', () => {
+        showPage('lessons-page');
+        toggleMobileMenu();
+      });
+      document.getElementById('mobile-quiz').addEventListener('click', () => {
+        showPage('quiz-page');
+        toggleMobileMenu();
+      });
+      document.getElementById('mobile-subscription').addEventListener('click', () => {
+        showPage('subscription-page');
+        toggleMobileMenu();
+      });
+      document.getElementById('mobile-login').addEventListener('click', () => {
+        showLoginModal();
+        toggleMobileMenu();
+      });
+      
+      // Mobile menu toggle
+      document.getElementById('mobile-menu-button').addEventListener('click', toggleMobileMenu);
+    }
+    
+    function toggleMobileMenu() {
+      const mobileMenu = document.getElementById('mobile-menu');
+      mobileMenu.classList.toggle('hidden');
+    }
+    
+    function setupLanguageSelector() {
+      // Desktop language selector toggle
+      document.getElementById('language-button').addEventListener('click', () => {
+        document.getElementById('language-dropdown').classList.toggle('hidden');
+      });
+      
+      // Desktop language options
+      document.querySelectorAll('.language-option').forEach(option => {
+        option.addEventListener('click', (e) => {
+          const langCode = e.currentTarget.dataset.lang;
+          updateLanguage(langCode);
+          document.getElementById('language-dropdown').classList.add('hidden');
+        });
+      });
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#language-button')) {
+          document.getElementById('language-dropdown').classList.add('hidden');
+        }
+      });
+      
+      // Mobile language selector
+      document.getElementById('mobile-language').addEventListener('change', (e) => {
+        updateLanguage(e.target.value);
+      });
+    }
+    
+    function setupChatbot() {
+      const chatForm = document.getElementById('chat-form');
+      const chatInput = document.getElementById('chat-input');
+      const chatMessages = document.getElementById('chat-messages');
+      
+      // Add initial bot message
+      const currentLang = state.language;
+      const initialMessage = {
+        type: 'bot',
+        text: translations[currentLang].chatbotGreeting
+      };
+      state.chatMessages.push(initialMessage);
+      
+      chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const message = chatInput.value.trim();
+        if (!message) return;
+        
+        // Add user message
+        addChatMessage('user', message);
+        chatInput.value = '';
+        
+        // Show typing indicator
+        showTypingIndicator();
+        
+        // Simulate API response after a delay
+        setTimeout(() => {
+          removeTypingIndicator();
+          
+          // In a real app, this would call the backend API
+          const botResponse = "This is a prototype. In the full version, I'll provide nutrition advice based on your questions.";
+          addChatMessage('bot', botResponse);
+        }, 1500);
+      });
+    }
+    
+    function addChatMessage(type, text) {
+      // Add to state
+      state.chatMessages.push({ type, text });
+      
+      // Create message element
+      const messageElement = document.createElement('div');
+      messageElement.className = type === 'user' ? 'user-message p-3 mb-4 ml-auto max-w-[80%]' : 'bot-message p-3 mb-4 max-w-[80%]';
+      messageElement.innerHTML = `<p>${text}</p>`;
+      
+      // Add to chat container
+      const chatMessages = document.getElementById('chat-messages');
+      chatMessages.appendChild(messageElement);
+      
+      // Scroll to bottom
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function showTypingIndicator() {
+      const typingIndicator = document.createElement('div');
+      typingIndicator.id = 'typing-indicator';
+      typingIndicator.className = 'bot-message p-3 mb-4 max-w-[80%]';
+      typingIndicator.innerHTML = `
+        <div class="typing-indicator">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      `;
+      
+      const chatMessages = document.getElementById('chat-messages');
+      chatMessages.appendChild(typingIndicator);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function removeTypingIndicator() {
+      const indicator = document.getElementById('typing-indicator');
+      if (indicator) {
+        indicator.remove();
+      }
+    }
+    
+    function setupLessons() {
+      // Lesson modal handling
+      const viewLessonBtns = document.querySelectorAll('.view-lesson-btn');
+      const lessonModal = document.getElementById('lesson-modal');
+      const closeLessonModal = document.getElementById('close-lesson-modal');
+      
+      viewLessonBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const lessonId = e.currentTarget.dataset.id;
+          showLessonDetails(lessonId);
+        });
+      });
+      
+      closeLessonModal.addEventListener('click', () => {
+        lessonModal.classList.add('hidden');
+      });
+      
+      // Close modal when clicking outside
+      lessonModal.addEventListener('click', (e) => {
+        if (e.target === lessonModal) {
+          lessonModal.classList.add('hidden');
+        }
+      });
+    }
+    
+    function showLessonDetails(lessonId) {
+      const modal = document.getElementById('lesson-modal');
+      const modalTitle = document.getElementById('lesson-modal-title');
+      const modalContent = document.getElementById('lesson-modal-content');
+      
+      // In a real app, this would fetch from the backend
+      const lessonDetails = {
+        1: {
+          title: 'Balanced Diet Fundamentals',
+          content: `
+            <h3 class="text-xl font-bold mb-3">What is a Balanced Diet?</h3>
+            <p class="mb-4">A balanced diet provides all the nutrients your body needs to function properly. It includes a variety of foods from all major food groups in the right proportions.</p>
+            
+            <h3 class="text-xl font-bold mb-3">Main Components of a Balanced Diet</h3>
+            <ul class="list-disc pl-5 mb-4">
+              <li class="mb-2"><strong>Fruits and Vegetables:</strong> Aim for at least 5 portions per day to get essential vitamins, minerals, and fiber.</li>
+              <li class="mb-2"><strong>Carbohydrates:</strong> Choose whole grains like brown rice, whole wheat bread, and oats for energy and fiber.</li>
+              <li class="mb-2"><strong>Proteins:</strong> Include lean meats, fish, eggs, beans, and legumes to support body repair and growth.</li>
+              <li class="mb-2"><strong>Dairy or Alternatives:</strong> For calcium and other nutrients that support bone health.</li>
+              <li class="mb-2"><strong>Healthy Fats:</strong> In moderation, from sources like nuts, seeds, avocados, and olive oil.</li>
+            </ul>
+            
+            <h3 class="text-xl font-bold mb-3">Creating Balanced Meals</h3>
+            <p class="mb-4">A simple way to create balanced meals is to follow the plate method:</p>
+            <ul class="list-disc pl-5 mb-4">
+              <li class="mb-2">Fill half your plate with fruits and vegetables</li>
+              <li class="mb-2">Fill one quarter with whole grains or starchy vegetables</li>
+              <li class="mb-2">Fill one quarter with protein foods</li>
+              <li class="mb-2">Add a small amount of healthy fats</li>
+              <li class="mb-2">Include water or another healthy beverage</li>
+            </ul>
+            
+            <p>Remember, balance is key. No single food contains all the nutrients we need, which is why variety is important.</p>
+          `
+        },
+        2: {
+          title: 'Nutrition in Local Foods',
+          content: `
+            <h3 class="text-xl font-bold mb-3">Nutritional Value of Traditional Samburu Foods</h3>
+            <p class="mb-4">The traditional Samburu diet contains many nutritionally rich foods that provide essential nutrients for good health.</p>
+            
+            <h3 class="text-xl font-bold mb-3">Key Local Foods and Their Benefits</h3>
+            <ul class="list-disc pl-5 mb-4">
+              <li class="mb-2"><strong>Milk:</strong> A staple in Samburu diet, providing protein, calcium, and vitamin D.</li>
+              <li class="mb-2"><strong>Meat (Goat, Sheep, Beef):</strong> Excellent source of protein, iron, zinc, and B vitamins.</li>
+              <li class="mb-2"><strong>Blood:</strong> Traditional source of iron and protein.</li>
+              <li class="mb-2"><strong>Wild Fruits and Berries:</strong> Rich in vitamins, minerals, and antioxidants.</li>
+              <li class="mb-2"><strong>Indigenous Vegetables:</strong> High in fiber, vitamins A and C, and folate.</li>
+              <li class="mb-2"><strong>Honey:</strong> Natural source of energy and antimicrobial properties.</li>
+            </ul>
+            
+            <h3 class="text-xl font-bold mb-3">Incorporating Traditional Foods in a Modern Diet</h3>
+            <p class="mb-4">Traditional foods can be combined with modern nutrition knowledge to create balanced, healthy meals:</p>
+            <ul class="list-disc pl-5 mb-4">
+              <li class="mb-2">Balance animal products with plenty of plant foods</li>
+              <li class="mb-2">Include indigenous vegetables and fruits when available</li>
+              <li class="mb-2">Add whole grains like millet and sorghum to meals</li>
+              <li class="mb-2">Use honey as a natural sweetener instead of processed sugar</li>
+            </ul>
+            
+            <p>By valuing traditional foods while incorporating nutrition science, Samburu communities can maintain cultural food practices while optimizing health.</p>
+          `
+        },
+        3: {
+          title: 'Healthy Meal Preparation',
+          content: `
+            <h3 class="text-xl font-bold mb-3">Principles of Healthy Meal Preparation</h3>
+            <p class="mb-4">How you prepare food is just as important as what foods you choose. Proper preparation techniques preserve nutrients and create delicious, healthy meals.</p>
+            
+            <h3 class="text-xl font-bold mb-3">Cooking Methods for Nutrient Retention</h3>
+            <ul class="list-disc pl-5 mb-4">
+              <li class="mb-2"><strong>Steaming:</strong> Preserves vitamins and minerals that might be lost in boiling.</li>
+              <li class="mb-2"><strong>Roasting:</strong> Enhances flavor without adding extra fat.</li>
+              <li class="mb-2"><strong>Grilling:</strong> Allows fat to drip away while cooking.</li>
+              <li class="mb-2"><strong>Stir-frying:</strong> Quick cooking that preserves nutrients and requires minimal oil.</li>
+              <li class="mb-2"><strong>Boiling:</strong> When necessary, use minimal water and time to reduce nutrient loss.</li>
+            </ul>
+            
+            <h3 class="text-xl font-bold mb-3">Simple Meal Planning Tips</h3>
+            <ul class="list-disc pl-5 mb-4">
+              <li class="mb-2">Plan meals ahead for the week to ensure variety and balance</li>
+              <li class="mb-2">Prepare ingredients in advance to make cooking easier</li>
+              <li class="mb-2">Cook larger batches and save portions for later meals</li>
+              <li class="mb-2">Use herbs and spices instead of salt for flavoring</li>
+              <li class="mb-2">Include a variety of colors on your plate to ensure diverse nutrients</li>
+            </ul>
+            
+            <h3 class="text-xl font-bold mb-3">Food Safety Basics</h3>
+            <ul class="list-disc pl-5 mb-4">
+              <li class="mb-2">Wash hands thoroughly before handling food</li>
+              <li class="mb-2">Keep raw meat separate from other foods</li>
+              <li class="mb-2">Cook food to proper temperatures</li>
+              <li class="mb-2">Refrigerate leftovers promptly</li>
+              <li class="mb-2">Use clean water for washing and cooking</li>
+            </ul>
+          `
+        }
+      };
+      
+      const lessonData = lessonDetails[lessonId];
+      modalTitle.textContent = lessonData.title;
+      modalContent.innerHTML = lessonData.content;
+      
+      modal.classList.remove('hidden');
+    }
+    
+    function setupQuiz() {
+      const startQuizBtn = document.getElementById('start-quiz-btn');
+      const quizQuestionsScreen = document.getElementById('quiz-questions-screen');
+      const quizStartScreen = document.getElementById('quiz-start-screen');
+      const quizResultsScreen = document.getElementById('quiz-results-screen');
+      const quizNextBtn = document.getElementById('quiz-next-btn');
+      const quizPrevBtn = document.getElementById('quiz-prev-btn');
+      const retryQuizBtn = document.getElementById('retry-quiz-btn');
+      
+      // Quiz questions (in a real app, would come from the backend)
+      const quizQuestions = [
+        {
+          question: "What food group should make up the largest portion of your diet?",
+          options: [
+            { id: 'a', text: "Fruits and vegetables" },
+            { id: 'b', text: "Grains and cereals" },
+            { id: 'c', text: "Proteins" },
+            { id: 'd', text: "Dairy products" }
+          ],
+          answer: 'a'
+        },
+        {
+          question: "Which of these is NOT a good source of protein?",
+          options: [
+            { id: 'a', text: "Beans" },
+            { id: 'b', text: "White rice" },
+            { id: 'c', text: "Fish" },
+            { id: 'd', text: "Meat" }
+          ],
+          answer: 'b'
+        },
+        {
+          question: "How many servings of fruits and vegetables should you aim for daily?",
+          options: [
+            { id: 'a', text: "1-2 servings" },
+            { id: 'b', text: "2-3 servings" },
+            { id: 'c', text: "At least 5 servings" },
+            { id: 'd', text: "10 servings" }
+          ],
+          answer: 'c'
+        },
+        {
+          question: "Which nutrient is most important for building strong bones?",
+          options: [
+            { id: 'a', text: "Vitamin C" },
+            { id: 'b', text: "Calcium" },
+            { id: 'c', text: "Fiber" },
+            { id: 'd', text: "Iron" }
+          ],
+          answer: 'b'
+        },
+        {
+          question: "Which cooking method is generally the healthiest?",
+          options: [
+            { id: 'a', text: "Deep frying" },
+            { id: 'b', text: "Steaming" },
+            { id: 'c', text: "Boiling for long periods" },
+            { id: 'd', text: "Cooking with a lot of oil" }
+          ],
+          answer: 'b'
+        }
+      ];
+      
+      startQuizBtn.addEventListener('click', () => {
+        quizStartScreen.classList.add('hidden');
+        quizQuestionsScreen.classList.remove('hidden');
+        loadQuestion(0);
+      });
+      
+      retryQuizBtn.addEventListener('click', () => {
+        state.currentQuestion = 0;
+        state.quizScore = 0;
+        state.selectedOptions = [];
+        quizResultsScreen.classList.add('hidden');
+        quizQuestionsScreen.classList.remove('hidden');
+        loadQuestion(0);
+      });
+      
+      quizNextBtn.addEventListener('click', () => {
+        const currentQuestion = state.currentQuestion;
+        const feedback = document.getElementById('quiz-feedback');
+        
+        // If no option selected, show warning
+        if (!state.selectedOptions[currentQuestion]) {
+          feedback.innerHTML = `<p class="text-yellow-600"><i class="fas fa-exclamation-circle mr-2"></i>Please select an answer before continuing.</p>`;
+          feedback.classList.remove('hidden');
+          return;
+        }
+        
+        const selectedOption = state.selectedOptions[currentQuestion];
+        const correctAnswer = quizQuestions[currentQuestion].answer;
+        
+        // Show feedback
+        if (selectedOption === correctAnswer) {
+          feedback.innerHTML = `<p class="text-green-600"><i class="fas fa-check-circle mr-2"></i>Correct! Well done.</p>`;
+          state.quizScore++;
+        } else {
+          feedback.innerHTML = `<p class="text-red-600"><i class="fas fa-times-circle mr-2"></i>Incorrect. The correct answer was ${correctAnswer.toUpperCase()}.</p>`;
+        }
+        
+        feedback.classList.remove('hidden');
+        
+        // After a delay, move to next question or show results
+        setTimeout(() => {
+          feedback.classList.add('hidden');
+          
+          if (currentQuestion < quizQuestions.length - 1) {
+            state.currentQuestion++;
+            loadQuestion(state.currentQuestion);
+          } else {
+            // Quiz completed
+            showQuizResults();
+          }
+        }, 1500);
+      });
+      
+      // Set up option selection
+      document.getElementById('quiz-options').addEventListener('click', (e) => {
+        const option = e.target.closest('.quiz-option');
+        if (option) {
+          // Remove selection from all options
+          document.querySelectorAll('.quiz-option').forEach(opt => {
+            opt.classList.remove('bg-blue-50', 'border-blue-500', 'selected');
+          });
+          
+          // Add selection to clicked option
+          option.classList.add('bg-blue-50', 'border-blue-500', 'selected');
+          
+          // Store selected option
+          state.selectedOptions[state.currentQuestion] = option.dataset.option;
+        }
+      });
+      
+      function loadQuestion(questionIndex) {
+        const question = quizQuestions[questionIndex];
+        document.getElementById('question-number').textContent = `${questionIndex + 1}/${quizQuestions.length}`;
+        document.getElementById('quiz-question').textContent = question.question;
+        
+        // Update progress bar
+        const progressPercentage = ((questionIndex + 1) / quizQuestions.length) * 100;
+        document.getElementById('quiz-progress').style.width = `${progressPercentage}%`;
+        
+        // Clear previous selection
+        document.querySelectorAll('.quiz-option').forEach(opt => {
+          opt.classList.remove('bg-blue-50', 'border-blue-500', 'selected');
+        });
+        
+        // Populate options
+        const optionsContainer = document.getElementById('quiz-options');
+        optionsContainer.innerHTML = '';
+        
+        question.options.forEach(option => {
+          const optionElement = document.createElement('div');
+          optionElement.className = 'quiz-option border rounded-lg p-4 cursor-pointer hover:bg-gray-50';
+          optionElement.dataset.option = option.id;
+          
+          // If this option was previously selected, add selection styling
+          if (state.selectedOptions[questionIndex] === option.id) {
+            optionElement.classList.add('bg-blue-50', 'border-blue-500', 'selected');
+          }
+          
+          optionElement.innerHTML = `<span class="font-medium">${option.id.toUpperCase()}.</span> ${option.text}`;
+          optionsContainer.appendChild(optionElement);
+        });
+        
+        // Hide/show prev button based on question index
+        if (questionIndex > 0) {
+          document.getElementById('quiz-prev-btn').classList.remove('hidden');
+        } else {
+          document.getElementById('quiz-prev-btn').classList.add('hidden');
+        }
+        
+        // Update next button text on last question
+        if (questionIndex === quizQuestions.length - 1) {
+          document.getElementById('quiz-next-btn').textContent = 'Finish Quiz';
+        } else {
+          document.getElementById('quiz-next-btn').innerHTML = 'Next<i class="fas fa-arrow-right ml-2"></i>';
+        }
+        
+        // Hide feedback
+        document.getElementById('quiz-feedback').classList.add('hidden');
+      }
+      
+      function showQuizResults() {
+        quizQuestionsScreen.classList.add('hidden');
+        quizResultsScreen.classList.remove('hidden');
+        document.getElementById('quiz-score').textContent = state.quizScore;
+      }
+    }
+    
+    function setupSubscription() {
+      const subscribeBtns = document.querySelectorAll('.subscribe-btn');
+      const paymentModal = document.getElementById('payment-modal');
+      const closePaymentModal = document.getElementById('close-payment-modal');
+      const paymentForm = document.getElementById('payment-form');
+      
+      // Plan details
+      const plans = {
+        standard: { name: 'Standard Plan', amount: 'KES 300' },
+        premium: { name: 'Premium Plan', amount: 'KES 500' },
+        weight: { name: 'Weight Management Plan', amount: 'KES 400' },
+        family: { name: 'Family Nutrition Plan', amount: 'KES 600' },
+        immunity: { name: 'Immunity Boosting Plan', amount: 'KES 450' }
+      };
+      
+      subscribeBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const planId = e.currentTarget.dataset.plan;
+          showPaymentModal(planId);
+        });
+      });
+      
+      closePaymentModal.addEventListener('click', () => {
+        paymentModal.classList.add('hidden');
+      });
+      
+      paymentForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        // Simulate payment processing
+        paymentModal.classList.add('hidden');
+        
+        // Show success toast
+        showToast('success', 'Payment Successful', 'Your subscription has been processed successfully.');
+      });
+      
+      function showPaymentModal(planId) {
+        const plan = plans[planId];
+        document.getElementById('selected-plan-name').textContent = plan.name;
+        document.getElementById('selected-plan-amount').textContent = plan.amount;
+        paymentModal.classList.remove('hidden');
+      }
+    }
+    
+    function setupAuthModals() {
+      const loginModal = document.getElementById('login-modal');
+      const registerModal = document.getElementById('register-modal');
+      const loginForm = document.getElementById('login-form');
+      const registerForm = document.getElementById('register-form');
+      
+      // Login modal buttons
+      document.getElementById('close-login-modal').addEventListener('click', () => {
+        loginModal.classList.add('hidden');
+      });
+      
+      document.getElementById('show-register').addEventListener('click', () => {
+        loginModal.classList.add('hidden');
+        registerModal.classList.remove('hidden');
+      });
+      
+      // Register modal buttons
+      document.getElementById('close-register-modal').addEventListener('click', () => {
+        registerModal.classList.add('hidden');
+      });
+      
+      document.getElementById('show-login').addEventListener('click', () => {
+        registerModal.classList.add('hidden');
+        loginModal.classList.remove('hidden');
+      });
+      
+      // Form submissions
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        // Simulate login success
+        loginModal.classList.add('hidden');
+        state.isLoggedIn = true;
+        
+        // Show success toast
+        showToast('success', 'Login Successful', 'You have been logged in successfully.');
+      });
+      
+      registerForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        // Simulate registration success
+        registerModal.classList.add('hidden');
+        state.isLoggedIn = true;
+        
+        // Show success toast
+        showToast('success', 'Registration Successful', 'Your account has been created successfully.');
+      });
+    }
+    
+    function showLoginModal() {
+      document.getElementById('login-modal').classList.remove('hidden');
+    }
+    
+    function showPage(pageId) {
+      // Hide all pages
+      document.querySelectorAll('.page-container').forEach(page => {
+        page.classList.add('hidden');
+      });
+      
+      // Show selected page
+      document.getElementById(pageId).classList.remove('hidden');
+      
+      // Add animation classes
+      document.getElementById(pageId).classList.add('page-enter');
+      
+      // Update state
+      state.currentPage = pageId;
+      
+      // Remove animation classes after animation completes
+      setTimeout(() => {
+        document.getElementById(pageId).classList.remove('page-enter');
+      }, 300);
+      
+      // Scroll to top
+      window.scrollTo(0, 0);
+    }
+    
+    function showToast(type, title, message) {
+      const toast = document.getElementById('toast');
+      const toastTitle = document.getElementById('toast-title');
+      const toastMessage = document.getElementById('toast-message');
+      const toastIcon = document.getElementById('toast-icon');
+      const toastIconSymbol = document.getElementById('toast-icon-symbol');
+      
+      // Set content based on type
+      if (type === 'success') {
+        toastIcon.className = 'mr-3 text-green-500';
+        toastIconSymbol.className = 'fas fa-check-circle text-xl';
+      } else if (type === 'error') {
+        toastIcon.className = 'mr-3 text-red-500';
+        toastIconSymbol.className = 'fas fa-exclamation-circle text-xl';
+      } else {
+        toastIcon.className = 'mr-3 text-blue-500';
+        toastIconSymbol.className = 'fas fa-info-circle text-xl';
+      }
+      
+      toastTitle.textContent = title;
+      toastMessage.textContent = message;
+      
+      // Show toast
+      toast.classList.remove('translate-y-full');
+      
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        toast.classList.add('translate-y-full');
+      }, 5000);
+      
+      // Close button
+      document.getElementById('close-toast').addEventListener('click', () => {
+        toast.classList.add('translate-y-full');
+      });
+    }
+  </script>
+</body>
+</html>
